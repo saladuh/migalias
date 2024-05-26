@@ -20,6 +20,8 @@ import (
 	"fmt"
 	"os"
 
+	"git.sr.ht/~salad/migalias/cmd/mailbox"
+
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -57,7 +59,7 @@ func init() {
 	// Cobra supports persistent flags, which, if defined here,
 	// will be global for your application.
 
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $XDG_CONFIG_HOME/migalias.yaml)")
+	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $XDG_CONFIG_HOME/.migalias.yaml)")
 	rootCmd.PersistentFlags().StringP("token", "t", "", "API token associated with Migadu account")
 	rootCmd.PersistentFlags().StringP("useremail", "e", "example@example.com", "User Email of the Migadu account")
 
@@ -68,6 +70,9 @@ func init() {
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.
 	rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+
+	rootCmd.AddCommand(mailbox.MailboxCmd)
+
 }
 
 // initConfig reads in config file and ENV variables if set.
