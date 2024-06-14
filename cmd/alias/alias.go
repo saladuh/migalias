@@ -19,6 +19,8 @@ package alias
 import (
 	"fmt"
 
+	"git.sr.ht/~salad/migalias/cmd"
+
 	"github.com/spf13/cobra"
 )
 
@@ -38,8 +40,6 @@ to quickly create a Cobra application.`,
 }
 
 func init() {
-	rootCmd.AddCommand(aliasCmd)
-
 	// Here you will define your flags and configuration settings.
 
 	// Cobra supports Persistent Flags which will work for this command

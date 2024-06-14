@@ -14,38 +14,37 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program. If not, see <http://www.gnu.org/licenses/>.
 */
-package mailbox
+package rewrite
 
 import (
 	"fmt"
 
-	"git.sr.ht/~salad/migalias/cmd"
 	"github.com/spf13/cobra"
 )
 
-// mailboxCmd represents the mailbox command
-var mailboxCmd = &cobra.Command{
-	Use:   "mailbox",
-	Short: "Mailbox related commands",
+// listCmd represents the list command
+var listCmd = &cobra.Command{
+	Use:   "list",
+	Short: "A brief description of your command",
 	Long: `A longer description that spans multiple lines and likely contains examples
 and usage of using your command. For example:
 
-migalias mailbox [options]`,
+Cobra is a CLI library for Go that empowers applications.
+This application is a tool to generate the needed files
+to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("mailbox called")
+		fmt.Println("list called")
 	},
 }
 
 func init() {
-	cmd.RootCmd.AddCommand(mailboxCmd)
-	mailboxCmd.AddCommand(listCmd)
 	// Here you will define your flags and configuration settings.
 
 	// Cobra supports Persistent Flags which will work for this command
 	// and all subcommands, e.g.:
-	// mailboxCmd.PersistentFlags().String("foo", "", "A help for foo")
+	// listCmd.PersistentFlags().String("foo", "", "A help for foo")
 
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
-	// mailboxCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	// listCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }

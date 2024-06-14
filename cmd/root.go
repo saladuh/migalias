@@ -20,16 +20,14 @@ import (
 	"fmt"
 	"os"
 
-	"git.sr.ht/~salad/migalias/cmd/mailbox"
-
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
 
 var cfgFile string
 
-// rootCmd represents the base command when called without any subcommands
-var rootCmd = &cobra.Command{
+// RootCmd represents the base command when called without any subcommands
+var RootCmd = &cobra.Command{
 	Use:   "migalias",
 	Short: "Configure Migadu from the terminal!",
 	Long: `A longer description that spans multiple lines and likely contains
@@ -46,7 +44,7 @@ to quickly create a Cobra application.`,
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
-	err := rootCmd.Execute()
+	err := RootCmd.Execute()
 	if err != nil {
 		os.Exit(1)
 	}
@@ -59,20 +57,18 @@ func init() {
 	// Cobra supports persistent flags, which, if defined here,
 	// will be global for your application.
 
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $XDG_CONFIG_HOME/.migalias.yaml)")
-	rootCmd.PersistentFlags().StringP("token", "t", "", "API token associated with Migadu account")
-	rootCmd.PersistentFlags().StringP("useremail", "e", "example@example.com", "User Email of the Migadu account")
+	RootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $XDG_CONFIG_HOME/.migalias.yaml)")
+	RootCmd.PersistentFlags().StringP("token", "t", "", "API token associated with Migadu account")
+	RootCmd.PersistentFlags().StringP("useremail", "e", "example@example.com", "User Email of the Migadu account")
+	RootCmd.PersistentFlags().StringSliceP("domains", "d", nil, "domains as comma seperated list")
 
 	// Bind flags with configuration file settings
-	viper.BindPFlag("user_token", rootCmd.PersistentFlags().Lookup("token"))
-	viper.BindPFlag("user_email", rootCmd.PersistentFlags().Lookup("useremail"))
-
+	viper.BindPFlag("user_token", RootCmd.PersistentFlags().Lookup("token"))
+	viper.BindPFlag("user_email", RootCmd.PersistentFlags().Lookup("useremail"))
+	viper.BindPFlag("default_domains", RootCmd.PersistentFlags().Lookup("domains"))
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.
-	rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
-
-	rootCmd.AddCommand(mailbox.MailboxCmd)
-
+	//rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
 
 // initConfig reads in config file and ENV variables if set.
@@ -82,21 +78,29 @@ func initConfig() {
 		viper.SetConfigFile(cfgFile)
 	} else {
 		// Find home directory.
-		home, err := os.UserHomeDir()
+		configHome, err := os.UserConfigDir()
 		cobra.CheckErr(err)
 
 		// Search config in home directory with name ".migalias" (without extension).
-		viper.AddConfigPath("$XDG_CONFIG_HOME")
-		viper.AddConfigPath("$HOME/.config")
-		viper.AddConfigPath(home)
+		viper.AddConfigPath(configHome)
 		viper.SetConfigType("yaml")
-		viper.SetConfigName(".migalias")
+		viper.SetConfigName("migalias")
 	}
 
+	viper.SetEnvPrefix("migadu")
 	viper.AutomaticEnv() // read in environment variables that match
 
 	// If a config file is found, read it in.
 	if err := viper.ReadInConfig(); err == nil {
 		fmt.Fprintln(os.Stderr, "Using config file:", viper.ConfigFileUsed())
+		// Fallback to oldschool home directory dotfile.
+	} else if cfgFile == "" {
+		home, err := os.UserHomeDir()
+		cobra.CheckErr(err)
+		viper.AddConfigPath(home)
+		viper.SetConfigName(".migalias")
+		if err := viper.ReadInConfig(); err == nil {
+			fmt.Fprintln(os.Stderr, "Using config file:", viper.ConfigFileUsed())
+		}
 	}
 }
