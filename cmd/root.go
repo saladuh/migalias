@@ -65,7 +65,7 @@ func init() {
 	// Bind flags with configuration file settings
 	viper.BindPFlag("user_token", RootCmd.PersistentFlags().Lookup("token"))
 	viper.BindPFlag("user_email", RootCmd.PersistentFlags().Lookup("useremail"))
-	viper.BindPFlag("default_domains", RootCmd.PersistentFlags().Lookup("domains"))
+	viper.BindPFlag("domains", RootCmd.PersistentFlags().Lookup("domains"))
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.
 	//rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")

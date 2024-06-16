@@ -21,6 +21,7 @@ import (
 
 	"git.sr.ht/~salad/migalias/cmd"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 // mailboxCmd represents the mailbox command
@@ -33,12 +34,18 @@ and usage of using your command. For example:
 migalias mailbox [options]`,
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("mailbox called")
+		if domains := viper.GetStringSlice("domains"); domains != nil {
+			fmt.Println("There are some domains!")
+			fmt.Println(domains)
+		}
 	},
 }
 
 func init() {
 	cmd.RootCmd.AddCommand(mailboxCmd)
 	mailboxCmd.AddCommand(listCmd)
+
+	mailboxCmd.PersistentFlags().BoolP("test", "w", false, "test")
 	// Here you will define your flags and configuration settings.
 
 	// Cobra supports Persistent Flags which will work for this command

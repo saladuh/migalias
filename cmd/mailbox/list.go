@@ -19,7 +19,7 @@ package mailbox
 import (
 	"fmt"
 
-	"git.sr.ht/~salad/migagoapi"
+	// "git.sr.ht/~salad/migagoapi"
 	"github.com/spf13/cobra"
 )
 

@@ -16,7 +16,13 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 */
 package main
 
-import "git.sr.ht/~salad/migalias/cmd"
+import (
+	"git.sr.ht/~salad/migalias/cmd"
+	_ "git.sr.ht/~salad/migalias/cmd/alias"
+	_ "git.sr.ht/~salad/migalias/cmd/identity"
+	_ "git.sr.ht/~salad/migalias/cmd/mailbox"
+	_ "git.sr.ht/~salad/migalias/cmd/rewrite"
+)
 
 func main() {
 	cmd.Execute()
