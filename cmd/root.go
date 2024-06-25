@@ -61,6 +61,7 @@ func init() {
 	RootCmd.PersistentFlags().StringP("token", "t", "", "API token associated with Migadu account")
 	RootCmd.PersistentFlags().StringP("useremail", "e", "example@example.com", "User Email of the Migadu account")
 	RootCmd.PersistentFlags().StringSliceP("domains", "d", nil, "domains as comma seperated list")
+	RootCmd.PersistentFlags().CountP("verbosity", "v", "-v, -vv, -vvv, to increase verbosity")
 
 	// Bind flags with configuration file settings
 	viper.BindPFlag("user_token", RootCmd.PersistentFlags().Lookup("token"))
