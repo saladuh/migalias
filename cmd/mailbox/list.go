@@ -18,8 +18,10 @@ package mailbox
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"strings"
+	"sync"
 
 	"git.sr.ht/~salad/migagoapi"
 	"git.sr.ht/~salad/migalias/internal/utils"
@@ -41,24 +43,40 @@ migalias mailbox list`,
 	ValidArgs: []string{"min", "minimal", "extra", "max", "maximum"},
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("list called")
+		var wg sync.WaitGroup
+		var mailOutput strings.Builder
 		userEmail := viper.GetString("user_email")
 		userToken := viper.GetString("user_token")
 		domains := viper.GetStringSlice("domains")
+		boxes := make([]utils.Wrapped[[]migagoapi.Mailbox], len(domains))
+		wg.Add(len(domains))
 		verbosity, err := cmd.Flags().GetCount("verbosity")
 		cobra.CheckErr(err)
 		verbosity = processListArgs(args, verbosity)
-		// client, err := migagoapi.NewClient(&userEmail, &userToken,
-		// 	nil, &viper.GetStringSlice("domains")[0], nil)
-		// cobra.CheckErr(err)
-		// fmt.Println(client.GetMailboxes(context.Background()))
-		for _, domain := range domains {
-			fmt.Printf("\nDomain: %s\n", domain)
-			client, err := migagoapi.NewClient(&userEmail, &userToken, nil, &domain, nil)
-			cobra.CheckErr(err)
-			domainMailboxes, err := client.GetMailboxes(context.Background())
-			cobra.CheckErr(err)
-			listMailboxes(*domainMailboxes, verbosity)
+
+		for i, domain := range domains {
+			go func() {
+				client, err := migagoapi.NewClient(&userEmail, &userToken, nil, &domain, nil)
+				cobra.CheckErr(err)
+				domainBoxes, err := client.GetMailboxes(context.Background())
+				boxes[i] = utils.Wrapped[[]migagoapi.Mailbox]{Value: *domainBoxes, Err: err}
+				wg.Done()
+			}()
 		}
+
+		wg.Wait()
+
+		for i, domain := range domains {
+			mailOutput.WriteString(fmt.Sprintf("\nDomain: %s\n", domain))
+			if boxes[i].IsErr() {
+				mailOutput.WriteString(boxes[i].Err.Error())
+			} else {
+				listMailboxes(&mailOutput, boxes[i].Value, verbosity)
+			}
+		}
+
+		fmt.Println(mailOutput.String())
+
 	},
 }
 
@@ -75,15 +93,19 @@ func init() {
 	// listCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
 
-func listMailboxes(mailboxes []migagoapi.Mailbox, verbosity int) {
-	var output strings.Builder
+func listMailboxes(output *strings.Builder, mailboxes []migagoapi.Mailbox, verbosity int) {
 	switch verbosity {
 	case 1:
-		utils.ListAddressesWithIdentities(&output, mailboxes, "\n\t", "\n\t", "\n")
+		utils.ListAddressesWithIdentities(output, mailboxes, "\n\t", "\n\t", "\n")
+	case 2:
+		for _, box := range mailboxes {
+			out, err := json.MarshalIndent(box, "", "\t")
+			cobra.CheckErr(err)
+			output.Write(out)
+		}
 	default:
-		utils.ListAddresses(&output, mailboxes, "\n\t", "\n\t", "\n")
+		utils.ListAddresses(output, mailboxes, "\n\t", "\n\t", "\n")
 	}
-	fmt.Print(output.String())
 }
 
 func processListArgs(args []string, verbosity int) int {
