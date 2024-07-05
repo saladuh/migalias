@@ -52,3 +52,35 @@ func WrapUp[T any](value T, err error) Wrapped[T] {
 func (wrap *Wrapped[T]) IsErr() bool {
 	return wrap.Err != nil
 }
+
+func (wrap *Wrapped[T]) Get() T {
+	return wrap.Value
+}
+
+func (wrap *Wrapped[T]) GetOrPanic() T {
+	if err := wrap.Err; err != nil {
+		panic(err)
+	}
+	return wrap.Value
+}
+
+func ProcessVerboseArgs(verboseArg string, verbosity int, maxVerbosity int) int {
+	var outputVerbosity int
+	if verboseArg == "" {
+		outputVerbosity = 0
+	} else {
+		switch verboseArg {
+		case "min", "minimal":
+			outputVerbosity = 0
+		case "extra":
+			outputVerbosity = 1
+		case "max", "maximum":
+			outputVerbosity = 2
+		default:
+			panic("What the frick\n")
+		}
+	}
+
+	outputVerbosity = max(outputVerbosity, min(verbosity, maxVerbosity))
+	return outputVerbosity
+}

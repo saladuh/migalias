@@ -48,11 +48,15 @@ migalias mailbox list`,
 		userEmail := viper.GetString("user_email")
 		userToken := viper.GetString("user_token")
 		domains := viper.GetStringSlice("domains")
-		boxes := make([]utils.Wrapped[[]migagoapi.Mailbox], len(domains))
-		wg.Add(len(domains))
 		verbosity, err := cmd.Flags().GetCount("verbosity")
 		cobra.CheckErr(err)
-		verbosity = processListArgs(args, verbosity)
+		boxes := make([]utils.Wrapped[[]migagoapi.Mailbox], len(domains))
+		wg.Add(len(domains))
+		outVerbosity := ""
+		if len(args) > 0 {
+			outVerbosity = args[0]
+		}
+		verbosity = utils.ProcessVerboseArgs(outVerbosity, verbosity, lstMaxVerbosity)
 
 		for i, domain := range domains {
 			go func() {
@@ -71,7 +75,7 @@ migalias mailbox list`,
 			if boxes[i].IsErr() {
 				mailOutput.WriteString(boxes[i].Err.Error())
 			} else {
-				listMailboxes(&mailOutput, boxes[i].Value, verbosity)
+				listMailboxes(&mailOutput, boxes[i].Get(), verbosity)
 			}
 		}
 
@@ -106,26 +110,4 @@ func listMailboxes(output *strings.Builder, mailboxes []migagoapi.Mailbox, verbo
 	default:
 		utils.ListAddresses(output, mailboxes, "\n\t", "\n\t", "\n")
 	}
-}
-
-func processListArgs(args []string, verbosity int) int {
-	fmt.Println(args)
-	var outputVerbosity int
-	if len(args) == 0 {
-		outputVerbosity = 0
-	} else {
-		switch verboseLevel := args[0]; verboseLevel {
-		case "min", "minimal":
-			outputVerbosity = 0
-		case "extra":
-			outputVerbosity = 1
-		case "max", "maximum":
-			outputVerbosity = 2
-		default:
-			panic("What the frick\n")
-		}
-	}
-
-	outputVerbosity = max(outputVerbosity, min(verbosity, lstMaxVerbosity))
-	return outputVerbosity
 }

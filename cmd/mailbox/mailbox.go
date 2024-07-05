@@ -44,6 +44,7 @@ migalias mailbox [options]`,
 func init() {
 	cmd.RootCmd.AddCommand(mailboxCmd)
 	mailboxCmd.AddCommand(listCmd)
+	mailboxCmd.AddCommand(showCmd)
 
 	// mailboxCmd.PersistentFlags().BoolP("test", "w", false, "test")
 	// Here you will define your flags and configuration settings.
