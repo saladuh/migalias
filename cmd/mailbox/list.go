@@ -30,6 +30,7 @@ import (
 )
 
 const lstMaxVerbosity = 2
+const maxThreads = 3
 
 // listCmd represents the list command
 var listCmd = &cobra.Command{
@@ -50,7 +51,7 @@ migalias mailbox list`,
 		domains := viper.GetStringSlice("domains")
 		verbosity, err := cmd.Flags().GetCount("verbosity")
 		cobra.CheckErr(err)
-		boxes := make([]utils.Wrapped[[]migagoapi.Mailbox], len(domains))
+		boxes := make([]*utils.Wrapped[[]migagoapi.Mailbox], len(domains))
 		wg.Add(len(domains))
 		outVerbosity := ""
 		if len(args) > 0 {
@@ -58,12 +59,16 @@ migalias mailbox list`,
 		}
 		verbosity = utils.ProcessVerboseArgs(outVerbosity, verbosity, lstMaxVerbosity)
 
+		maxRoutines := make(chan int, maxThreads)
 		for i, domain := range domains {
+			maxRoutines <- 0
 			go func() {
+				defer func() {
+					<-maxRoutines
+				}()
 				client, err := migagoapi.NewClient(&userEmail, &userToken, nil, &domain, nil)
 				cobra.CheckErr(err)
-				domainBoxes, err := client.GetMailboxes(context.Background())
-				boxes[i] = utils.Wrapped[[]migagoapi.Mailbox]{Value: *domainBoxes, Err: err}
+				boxes[i] = utils.WrapUp(client.GetMailboxes(context.Background()))
 				wg.Done()
 			}()
 		}
@@ -100,7 +105,14 @@ func init() {
 func listMailboxes(output *strings.Builder, mailboxes []migagoapi.Mailbox, verbosity int) {
 	switch verbosity {
 	case 1:
-		utils.ListAddressesWithIdentities(output, mailboxes, "\n\t", "\n\t", "\n")
+		printWithIdentities := func(m *migagoapi.Mailbox) string {
+			var outString strings.Builder
+			outString.WriteString(m.GetAddress())
+			utils.ListWithFunc(&outString, m.Identities, (*migagoapi.Identity).GetAddress, "\n\t\t", "\n\t\t", "")
+			return outString.String()
+		}
+		utils.ListWithFunc(output, mailboxes, printWithIdentities, "\n\t", "\n\t", "\n")
+		// utils.ListAddressesWithIdentities(output, mailboxes, "\n\t", "\n\t", "\n")
 	case 2:
 		for _, box := range mailboxes {
 			out, err := json.MarshalIndent(box, "", "\t")
@@ -108,6 +120,6 @@ func listMailboxes(output *strings.Builder, mailboxes []migagoapi.Mailbox, verbo
 			output.Write(out)
 		}
 	default:
-		utils.ListAddresses(output, mailboxes, "\n\t", "\n\t", "\n")
+		utils.ListWithFunc(output, mailboxes, (*migagoapi.Mailbox).GetAddress, "\n\t", "\n\t", "\n")
 	}
 }

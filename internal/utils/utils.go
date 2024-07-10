@@ -1,49 +1,32 @@
 package utils
 
 import (
-	"git.sr.ht/~salad/migagoapi"
 	"strings"
 )
+
+// TODO: Do something better here. This is awful. Such a hacky workaround to the whole value not implementing the generic thing
+// (where the pointer does, but the value doesn't, and the slice contains values, not pointers)
+func ListWithFunc[M ~[]A, A any](output *strings.Builder, mailObs M, getFunc func(*A) string, delimiter, starter, ender string) {
+	if len(mailObs) == 0 {
+		return
+	}
+	output.WriteString(starter)
+	for i, o := range mailObs {
+		output.WriteString(getFunc(&o))
+		if i != len(mailObs)-1 {
+			output.WriteString(delimiter)
+		}
+	}
+	output.WriteString(ender)
+}
 
 type Wrapped[T any] struct {
 	Value T
 	Err   error
 }
 
-func ListAddresses[M ~[]O, O migagoapi.Addresser](output *strings.Builder, mailObs M, delimiter, starter, ender string) *strings.Builder {
-	if len(mailObs) == 0 {
-		return output
-	}
-	output.WriteString(starter)
-	for i, o := range mailObs {
-		output.WriteString(o.GetAddress())
-		if i != len(mailObs)-1 {
-			output.WriteString(delimiter)
-		}
-	}
-	output.WriteString(ender)
-	return output
-}
-
-func ListAddressesWithIdentities(
-	output *strings.Builder, mailObs []migagoapi.Mailbox, delimiter, starter, ender string) *strings.Builder {
-	if len(mailObs) == 0 {
-		return output
-	}
-	output.WriteString(starter)
-	for i, o := range mailObs {
-		output.WriteString(o.GetAddress())
-		ListAddresses(output, o.Identities, "\n\t\t", "\n\t\t", "")
-		if i != len(mailObs)-1 {
-			output.WriteString(delimiter)
-		}
-	}
-	output.WriteString(ender)
-	return output
-}
-
-func WrapUp[T any](value T, err error) Wrapped[T] {
-	return Wrapped[T]{
+func WrapUp[T any](value T, err error) *Wrapped[T] {
+	return &Wrapped[T]{
 		Value: value,
 		Err:   err,
 	}

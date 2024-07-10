@@ -3,7 +3,7 @@ module git.sr.ht/~salad/migalias
 go 1.22.2
 
 require (
-	git.sr.ht/~salad/migagoapi v0.0.0-20240618131311-80b82fca3237
+	git.sr.ht/~salad/migagoapi v0.0.0-20240710123533-ddf4f335eb10
 	github.com/spf13/cobra v1.8.1
 	github.com/spf13/viper v1.19.0
 )

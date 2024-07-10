@@ -44,6 +44,13 @@ to quickly create a Cobra application.`,
 		if !viper.IsSet("domains") {
 			return errors.New("'domains' is not set in config or anywhere else")
 		}
+		doms := viper.GetViper().GetStringSlice("domains")
+		if doms == nil {
+			return errors.New("'domains' is not set in config or anywhere else")
+		}
+		if len(doms) == 0 {
+			return errors.New("'domains' is not set in config or anywhere else")
+		}
 		return nil
 	},
 }
