@@ -20,6 +20,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"os"
 	"strings"
 	"sync"
 
@@ -59,6 +60,14 @@ to quickly create a Cobra application.`,
 		if len(args) > 1 {
 			outVerbosity = args[1]
 		}
+		defer func() {
+			if r := recover(); r != nil {
+				a := []string{"min", "extra", "max"}
+				fmt.Fprintf(os.Stderr, "mailbox list error: %s\n", r)
+				fmt.Fprintf(os.Stderr, "You must pass one of: %+q\n", a)
+				os.Exit(1)
+			}
+		}()
 		verbosity = utils.ProcessVerboseArgs(outVerbosity, verbosity, lstMaxVerbosity)
 
 		maxRoutines := make(chan int, maxThreads)

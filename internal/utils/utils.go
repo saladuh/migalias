@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"fmt"
 	"strings"
 )
 
@@ -60,7 +61,7 @@ func ProcessVerboseArgs(verboseArg string, verbosity int, maxVerbosity int) int 
 		case "max", "maximum":
 			outputVerbosity = 2
 		default:
-			panic("What the frick\n")
+			panic(fmt.Sprintf("Information density verbosity argument invalid: %s\n", verboseArg))
 		}
 	}
 
