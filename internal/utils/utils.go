@@ -64,6 +64,6 @@ func ProcessVerboseArgs(verboseArg string, verbosity int, maxVerbosity int) int 
 		}
 	}
 
-	outputVerbosity = max(outputVerbosity, min(verbosity, maxVerbosity))
+	outputVerbosity = min(max(outputVerbosity, verbosity), maxVerbosity)
 	return outputVerbosity
 }

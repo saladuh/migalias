@@ -19,7 +19,6 @@ package mailbox
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 
 	"git.sr.ht/~salad/migagoapi"
@@ -27,29 +26,54 @@ import (
 	"github.com/spf13/viper"
 )
 
+const (
+	password = iota + 1
+	invitationEmail
+)
+
+var authType int
+
 var createCmd = &cobra.Command{
-	Use:   "create [local part] [name]",
+	Use:   "create local_part name",
 	Short: "",
 	Long:  ``,
+	PreRun: func(cmd *cobra.Command, args []string) {
+		if cmd.Flags().Changed("password") {
+			authType = password
+		} else if cmd.Flags().Changed("invite") {
+			authType = invitationEmail
+		}
+	},
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("create called")
-		// var mailOutput strings.Builder
 		userEmail := viper.GetString("user_email")
 		userToken := viper.GetString("user_token")
 		domain := viper.GetStringSlice("domains")[0]
 		localPart := args[0]
 		name := args[1]
-		client, err := migagoapi.NewClient(&userEmail, &userToken, nil, &domain, nil)
+		client, err := migagoapi.NewClient(userEmail, userToken, "", domain, nil)
 		cobra.CheckErr(err)
-		if pass, err := cmd.Flags().GetString("password"); err == nil && pass != "" {
+
+		switch authType {
+		case password:
+			pass, _ := cmd.Flags().GetString("password")
 			newMailbox, err := client.CreateMailboxWithPassword(context.Background(), name, localPart, pass, false)
 			cobra.CheckErr(err)
 			fmt.Printf("The account %s@%s has been created sucessfully.\nMigadu Returned:\n", localPart, domain)
 			out, err := json.MarshalIndent(newMailbox, "", "\t")
 			cobra.CheckErr(err)
 			fmt.Println(string(out))
-		} else if err != nil {
-			cobra.CheckErr(errors.New("Password flag non existent"))
+		case invitationEmail:
+			iEmail, _ := cmd.Flags().GetString("invite")
+			newMailbox, err := client.CreateMailboxWithInvite(context.Background(), name, localPart, iEmail)
+			cobra.CheckErr(err)
+			fmt.Printf("The account %s@%s has been created sucessfully.\nMigadu Returned:\n", localPart, domain)
+			out, err := json.MarshalIndent(newMailbox, "", "\t")
+			cobra.CheckErr(err)
+			fmt.Println(string(out))
+			fmt.Printf("Access the email account %s to reset the password.\n", iEmail)
+		default:
+			panic("mailbox create: Something went very wrong with either your password or invitation email")
 		}
 	},
 }

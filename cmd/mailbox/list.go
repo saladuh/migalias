@@ -64,12 +64,12 @@ migalias mailbox list`,
 			maxRoutines <- 0
 			go func() {
 				defer func() {
+					wg.Done()
 					<-maxRoutines
 				}()
-				client, err := migagoapi.NewClient(&userEmail, &userToken, nil, &domain, nil)
+				client, err := migagoapi.NewClient(userEmail, userToken, "", domain, nil)
 				cobra.CheckErr(err)
 				boxes[i] = utils.WrapUp(client.GetMailboxes(context.Background()))
-				wg.Done()
 			}()
 		}
 

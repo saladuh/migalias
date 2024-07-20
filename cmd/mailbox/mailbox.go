@@ -37,6 +37,7 @@ migalias mailbox [options]`,
 		if domains := viper.GetStringSlice("domains"); domains != nil {
 			fmt.Println("There are some domains!")
 			fmt.Println(domains)
+			cmd.Usage()
 		}
 	},
 }
@@ -46,6 +47,7 @@ func init() {
 	mailboxCmd.AddCommand(listCmd)
 	mailboxCmd.AddCommand(showCmd)
 	mailboxCmd.AddCommand(createCmd)
+	mailboxCmd.AddCommand(deleteCmd)
 
 	// mailboxCmd.PersistentFlags().BoolP("test", "w", false, "test")
 	// Here you will define your flags and configuration settings.

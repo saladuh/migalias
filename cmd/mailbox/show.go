@@ -31,7 +31,7 @@ var showCmd = &cobra.Command{
 		// verbosity, err := cmd.Flags().GetCount("verbosity")
 		// cobra.CheckErr(err)
 		domain := domains[0]
-		client, err := migagoapi.NewClient(&userEmail, &userToken, nil, &domain, nil)
+		client, err := migagoapi.NewClient(userEmail, userToken, "", domain, nil)
 		cobra.CheckErr(err)
 		box, err := client.GetMailbox(context.Background(), localPart)
 		cobra.CheckErr(err)
