@@ -19,44 +19,37 @@ package mailbox
 import (
 	"fmt"
 
-	"git.sr.ht/~salad/migalias/cmd"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
 
-// mailboxCmd represents the mailbox command
-var mailboxCmd = &cobra.Command{
-	Use:   "mailbox",
-	Short: "Mailbox related commands",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
+func NewCommand() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "mailbox",
+		Short: "Mailbox related commands",
+		Long: `A longer description that spans multiple lines and likely contains examples
+	and usage of using your command. For example:
 
-migalias mailbox [options]`,
-	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("mailbox called")
-		if domains := viper.GetStringSlice("domains"); domains != nil {
-			fmt.Println("There are some domains!")
-			fmt.Println(domains)
-			cmd.Usage()
-		}
-	},
+	migalias mailbox [options]`,
+		Run: func(cmd *cobra.Command, args []string) {
+			fmt.Println("mailbox called")
+			if domains := viper.GetStringSlice("domains"); domains != nil {
+				fmt.Println("There are some domains!")
+				fmt.Println(domains)
+				cmd.Usage()
+			}
+		},
+	}
+
+	cmd.AddCommand(
+		newShowCommand(),
+		newListCommand(),
+		newCreateCmd(),
+		newDeleteCommand(),
+	)
+
+	return cmd
 }
 
 func init() {
-	cmd.RootCmd.AddCommand(mailboxCmd)
-	mailboxCmd.AddCommand(listCmd)
-	mailboxCmd.AddCommand(showCmd)
-	mailboxCmd.AddCommand(createCmd)
-	mailboxCmd.AddCommand(deleteCmd)
-
-	// mailboxCmd.PersistentFlags().BoolP("test", "w", false, "test")
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// mailboxCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// mailboxCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }

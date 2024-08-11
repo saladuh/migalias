@@ -1,20 +1,20 @@
 package utils
 
 import (
-	"fmt"
+	"errors"
 	"strings"
 )
 
 // TODO: Do something better here. This is awful. Such a hacky workaround to the whole value not implementing the generic thing
 // (where the pointer does, but the value doesn't, and the slice contains values, not pointers)
-func ListWithFunc[M ~[]A, A any](output *strings.Builder, mailObs M, getFunc func(*A) string, delimiter, starter, ender string) {
-	if len(mailObs) == 0 {
+func ListWithFunc[M ~[]A, A any](output *strings.Builder, l M, delimiter, starter, ender string, getS func(*A) string) {
+	if len(l) == 0 {
 		return
 	}
 	output.WriteString(starter)
-	for i, o := range mailObs {
-		output.WriteString(getFunc(&o))
-		if i != len(mailObs)-1 {
+	for i, o := range l {
+		output.WriteString(getS(&o))
+		if i != len(l)-1 {
 			output.WriteString(delimiter)
 		}
 	}
@@ -48,23 +48,21 @@ func (wrap *Wrapped[T]) GetOrPanic() T {
 	return wrap.Value
 }
 
-func ProcessVerboseArgs(verboseArg string, verbosity int, maxVerbosity int) int {
+func ProcessOutputLevel(verboseArg string, maxVerbosity int) (int, error) {
 	var outputVerbosity int
-	if verboseArg == "" {
+	var err error = nil
+	switch verboseArg {
+	case "", "min", "minimal":
 		outputVerbosity = 0
-	} else {
-		switch verboseArg {
-		case "min", "minimal":
-			outputVerbosity = 0
-		case "extra":
-			outputVerbosity = 1
-		case "max", "maximum":
-			outputVerbosity = 2
-		default:
-			panic(fmt.Sprintf("Information density verbosity argument invalid: %s\n", verboseArg))
-		}
+	case "extra":
+		outputVerbosity = 1
+	case "max", "maximum":
+		outputVerbosity = 2
+	default:
+		outputVerbosity = 0
+		err = errors.New("Output verbosiy invalid")
 	}
 
-	outputVerbosity = min(max(outputVerbosity, verbosity), maxVerbosity)
-	return outputVerbosity
+	outputVerbosity = min(outputVerbosity, maxVerbosity)
+	return outputVerbosity, err
 }

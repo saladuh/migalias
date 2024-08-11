@@ -25,28 +25,33 @@ import (
 	"github.com/spf13/viper"
 )
 
-var deleteCmd = &cobra.Command{
-	Use:   "delete local_part",
-	Short: "",
-	Long:  ``,
-	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("delete called")
-		userEmail := viper.GetString("user_email")
-		userToken := viper.GetString("user_token")
-		domain := viper.GetStringSlice("domains")[0]
-		localPart := args[0]
-		client, err := migagoapi.NewClient(userEmail, userToken, "", domain, nil)
-		cobra.CheckErr(err)
+func newDeleteCommand() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "delete local_part",
+		Short: "",
+		Long:  ``,
+		Run:   deleteRun,
+	}
+	return cmd
+}
 
-		fmt.Printf("Deleting mailbox %s@%s ...\n", localPart, domain)
-		err = client.DeleteMailbox(context.Background(), localPart)
-		if err != nil {
-			fmt.Printf("An error occured while deleting %s@%s, see below.\n", localPart, domain)
-			panic(err)
-		} else {
-			fmt.Printf("Successfully deleted mailbox %s@%s\n", localPart, domain)
-		}
-	},
+func deleteRun(cmd *cobra.Command, args []string) {
+	fmt.Println("delete called")
+	userEmail := viper.GetString("user_email")
+	userToken := viper.GetString("user_token")
+	domain := viper.GetStringSlice("domains")[0]
+	localPart := args[0]
+	client, err := migagoapi.NewClient(userEmail, userToken, "", domain, nil)
+	cobra.CheckErr(err)
+
+	fmt.Printf("Deleting mailbox %s@%s ...\n", localPart, domain)
+	err = client.DeleteMailbox(context.Background(), localPart)
+	if err != nil {
+		fmt.Printf("An error occured while deleting %s@%s, see below.\n", localPart, domain)
+		panic(err)
+	} else {
+		fmt.Printf("Successfully deleted mailbox %s@%s\n", localPart, domain)
+	}
 }
 
 func init() {

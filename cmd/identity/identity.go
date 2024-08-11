@@ -17,30 +17,22 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 package identity
 
 import (
-	"fmt"
-
-	"git.sr.ht/~salad/migalias/cmd"
-
 	"github.com/spf13/cobra"
 )
 
-// identityCmd represents the identity command
-var identityCmd = &cobra.Command{
-	Use:   "identity",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
+func NewCommand() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "identity",
+		Short: "A brief description of your command",
+		Long:  ``,
+	}
 
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
-	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("identity called")
-		cmd.Usage()
-	},
+	cmd.AddCommand(
+		newListCmd(),
+	)
+
+	return cmd
 }
 
 func init() {
-	cmd.RootCmd.AddCommand(identityCmd)
-	identityCmd.AddCommand(listCmd)
 }

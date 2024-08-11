@@ -33,74 +33,70 @@ import (
 const maxThreads = 3
 const lstMaxVerbosity = 1
 
-// listCmd represents the list command
-var listCmd = &cobra.Command{
-	Use:   "list",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
+func newListCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "list mailboxLocalPart [min|extra|max]",
+		Short: "A brief description of your command",
+		Long:  ``,
+		Args:  cobra.RangeArgs(1, 2),
+		Run:   listRun,
+	}
 
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
-	Args: cobra.RangeArgs(1, 2),
-	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("list called")
-		var wg sync.WaitGroup
-		var identityOutput strings.Builder
-		var outVerbosity string
-		localPart := args[0]
-		userEmail := viper.GetString("user_email")
-		userToken := viper.GetString("user_token")
-		domains := viper.GetStringSlice("domains")
-		verbosity, err := cmd.Flags().GetCount("verbosity")
-		cobra.CheckErr(err)
-		boxes := make([]*utils.Wrapped[[]migagoapi.Identity], len(domains))
-		wg.Add(len(domains))
-		if len(args) > 1 {
-			outVerbosity = args[1]
-		}
-		defer func() {
-			if r := recover(); r != nil {
-				a := []string{"min", "extra", "max"}
-				fmt.Fprintf(os.Stderr, "mailbox list error: %s\n", r)
-				fmt.Fprintf(os.Stderr, "You must pass one of: %+q\n", a)
-				os.Exit(1)
-			}
-		}()
-		verbosity = utils.ProcessVerboseArgs(outVerbosity, verbosity, lstMaxVerbosity)
-
-		maxRoutines := make(chan int, maxThreads)
-		for i, domain := range domains {
-			maxRoutines <- 0
-			go func() {
-				defer func() {
-					wg.Done()
-					<-maxRoutines
-				}()
-				client, err := migagoapi.NewClient(userEmail, userToken, "", domain, nil)
-				cobra.CheckErr(err)
-				boxes[i] = utils.WrapUp(client.GetIdentities(context.Background(), localPart))
-			}()
-		}
-
-		wg.Wait()
-
-		for i, domain := range domains {
-			identityOutput.WriteString(fmt.Sprintf("\nDomain: %s\n", domain))
-			if boxes[i].IsErr() {
-				identityOutput.WriteString(boxes[i].Err.Error())
-			} else {
-				listIdentities(&identityOutput, boxes[i].Get(), verbosity)
-			}
-		}
-
-		fmt.Println(identityOutput.String())
-
-	},
+	return cmd
 }
 
 func init() {
+}
+
+func listRun(cmd *cobra.Command, args []string) {
+	fmt.Println("list called")
+	var wg sync.WaitGroup
+	var identityOutput strings.Builder
+	var outVerbosity string
+	var outputLevel int
+	localPart := args[0]
+	userEmail := viper.GetString("user_email")
+	userToken := viper.GetString("user_token")
+	domains := viper.GetStringSlice("domains")
+	boxes := make([]*utils.Wrapped[[]migagoapi.Identity], len(domains))
+	wg.Add(len(domains))
+	if len(args) > 1 {
+		outVerbosity = args[1]
+	}
+	outputLevel, err := utils.ProcessOutputLevel(outVerbosity, lstMaxVerbosity)
+	if err != nil {
+		a := []string{"min", "extra", "max"}
+		fmt.Fprintf(os.Stderr, "mailbox list error: %s\n", err)
+		fmt.Fprintf(os.Stderr, "You must pass one of: %+q\n", a)
+		os.Exit(1)
+	}
+
+	maxRoutines := make(chan int, maxThreads)
+	for i, domain := range domains {
+		maxRoutines <- 0
+		go func() {
+			defer func() {
+				wg.Done()
+				<-maxRoutines
+			}()
+			client, err := migagoapi.NewClient(userEmail, userToken, "", domain, nil)
+			cobra.CheckErr(err)
+			boxes[i] = utils.WrapUp(client.GetIdentities(context.Background(), localPart))
+		}()
+	}
+
+	wg.Wait()
+
+	for i, domain := range domains {
+		identityOutput.WriteString(fmt.Sprintf("\nDomain: %s\n", domain))
+		if boxes[i].IsErr() {
+			identityOutput.WriteString(boxes[i].Err.Error())
+		} else {
+			listIdentities(&identityOutput, boxes[i].Get(), outputLevel)
+		}
+	}
+
+	fmt.Println(identityOutput.String())
 }
 
 func listIdentities(output *strings.Builder, identities []migagoapi.Identity, verbosity int) {
@@ -112,6 +108,6 @@ func listIdentities(output *strings.Builder, identities []migagoapi.Identity, ve
 			output.Write(out)
 		}
 	default:
-		utils.ListWithFunc(output, identities, (*migagoapi.Identity).GetAddress, "\n\t", "\n\t", "\n")
+		utils.ListWithFunc(output, identities, "\n\t", "\n\t", "\n", (*migagoapi.Identity).GetAddress)
 	}
 }

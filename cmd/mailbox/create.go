@@ -22,65 +22,73 @@ import (
 	"fmt"
 
 	"git.sr.ht/~salad/migagoapi"
+	"git.sr.ht/~salad/migalias/internal/config"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
 
+type AuthType int
+
 const (
-	password = iota + 1
-	invitationEmail
+	authPassword AuthType = iota + 1
+	authInvitationEmail
 )
 
-var authType int
+var auth AuthType
 
-var createCmd = &cobra.Command{
-	Use:   "create local_part name",
-	Short: "",
-	Long:  ``,
-	PreRun: func(cmd *cobra.Command, args []string) {
-		if cmd.Flags().Changed("password") {
-			authType = password
-		} else if cmd.Flags().Changed("invite") {
-			authType = invitationEmail
-		}
-	},
-	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("create called")
-		userEmail := viper.GetString("user_email")
-		userToken := viper.GetString("user_token")
-		domain := viper.GetStringSlice("domains")[0]
-		localPart := args[0]
-		name := args[1]
-		client, err := migagoapi.NewClient(userEmail, userToken, "", domain, nil)
+func newCreateCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:    "create localPart name <-p password | -i email>",
+		Short:  "",
+		Long:   ``,
+		PreRun: createPreRun,
+		Run:    createRun,
+	}
+	config.RegisterMailboxCreateFlags(cmd)
+
+	return cmd
+}
+
+func createPreRun(cmd *cobra.Command, args []string) {
+	if cmd.Flags().Changed("password") {
+		auth = authPassword
+	} else if cmd.Flags().Changed("invite") {
+		auth = authInvitationEmail
+	}
+}
+
+func createRun(cmd *cobra.Command, args []string) {
+	fmt.Println("create called")
+	userEmail := viper.GetString("user_email")
+	userToken := viper.GetString("user_token")
+	domain := viper.GetStringSlice("domains")[0]
+	localPart := args[0]
+	name := args[1]
+	client, err := migagoapi.NewClient(userEmail, userToken, "", domain, nil)
+	cobra.CheckErr(err)
+
+	switch auth {
+	case authPassword:
+		pass, _ := cmd.Flags().GetString("password")
+		newMailbox, err := client.CreateMailboxWithPassword(context.Background(), name, localPart, pass, false)
 		cobra.CheckErr(err)
-
-		switch authType {
-		case password:
-			pass, _ := cmd.Flags().GetString("password")
-			newMailbox, err := client.CreateMailboxWithPassword(context.Background(), name, localPart, pass, false)
-			cobra.CheckErr(err)
-			fmt.Printf("The account %s@%s has been created sucessfully.\nMigadu Returned:\n", localPart, domain)
-			out, err := json.MarshalIndent(newMailbox, "", "\t")
-			cobra.CheckErr(err)
-			fmt.Println(string(out))
-		case invitationEmail:
-			iEmail, _ := cmd.Flags().GetString("invite")
-			newMailbox, err := client.CreateMailboxWithInvite(context.Background(), name, localPart, iEmail)
-			cobra.CheckErr(err)
-			fmt.Printf("The account %s@%s has been created sucessfully.\nMigadu Returned:\n", localPart, domain)
-			out, err := json.MarshalIndent(newMailbox, "", "\t")
-			cobra.CheckErr(err)
-			fmt.Println(string(out))
-			fmt.Printf("Access the email account %s to reset the password.\n", iEmail)
-		default:
-			panic("mailbox create: Something went very wrong with either your password or invitation email")
-		}
-	},
+		fmt.Printf("The account %s@%s has been created sucessfully.\nMigadu Returned:\n", localPart, domain)
+		out, err := json.MarshalIndent(newMailbox, "", "\t")
+		cobra.CheckErr(err)
+		fmt.Println(string(out))
+	case authInvitationEmail:
+		iEmail, _ := cmd.Flags().GetString("invite")
+		newMailbox, err := client.CreateMailboxWithInvite(context.Background(), name, localPart, iEmail)
+		cobra.CheckErr(err)
+		fmt.Printf("The account %s@%s has been created sucessfully.\nMigadu Returned:\n", localPart, domain)
+		out, err := json.MarshalIndent(newMailbox, "", "\t")
+		cobra.CheckErr(err)
+		fmt.Println(string(out))
+		fmt.Printf("Access the email account %s to reset the password.\n", iEmail)
+	default:
+		panic("mailbox create: Something went very wrong with either your password or invitation email")
+	}
 }
 
 func init() {
-	createCmd.Flags().StringP("password", "p", "", "Password to be used for mailbox")
-	createCmd.Flags().StringP("invite", "i", "", "Email to send mailbox invitation to (will also be set as the recovery email)")
-	createCmd.MarkFlagsMutuallyExclusive("password", "invite")
-	createCmd.MarkFlagsOneRequired("password", "invite")
 }
